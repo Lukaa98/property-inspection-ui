@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/property-inspection-ui/static/css/main.e6c13ad2.css",
-    "main.js": "/property-inspection-ui/static/js/main.33ce96d1.js",
+    "main.js": "/property-inspection-ui/static/js/main.8841dd69.js",
     "index.html": "/property-inspection-ui/index.html",
     "main.e6c13ad2.css.map": "/property-inspection-ui/static/css/main.e6c13ad2.css.map",
-    "main.33ce96d1.js.map": "/property-inspection-ui/static/js/main.33ce96d1.js.map"
+    "main.8841dd69.js.map": "/property-inspection-ui/static/js/main.8841dd69.js.map"
   },
   "entrypoints": [
     "static/css/main.e6c13ad2.css",
-    "static/js/main.33ce96d1.js"
+    "static/js/main.8841dd69.js"
   ]
 }
