@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Container, TextField, Button, Typography, Box } from '@mui/material';
+import { Container, Typography, Box } from '@mui/material';
+import InspectionForm from './components/InspectionForm';
+import { generateInspectionPDF } from './utils/pdfUtils';
 
 function App() {
   const [formData, setFormData] = useState({
@@ -9,18 +11,15 @@ function App() {
     email: '',
   });
 
+  const [pdfUrl, setPdfUrl] = useState(null);
+
   const handleChange = (e) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = () => {
-    const { address, inspectionType, date, email } = formData;
-
-    const subject = 'Property Inspection Request';
-    const body = `Address: ${address}\nInspection Type: ${inspectionType}\nDate Needed: ${date}`;
-    const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
-    window.location.href = mailtoLink;
+  const handleSubmit = async () => {
+    const url = await generateInspectionPDF(formData);
+    setPdfUrl(url);
   };
 
   return (
@@ -29,46 +28,26 @@ function App() {
         Property Inspection Request
       </Typography>
 
-      <Box display="flex" flexDirection="column" gap={2}>
-        <TextField
-          label="Property Address"
-          name="address"
-          value={formData.address}
-          onChange={handleChange}
-          fullWidth
-        />
+      <InspectionForm
+        formData={formData}
+        onChange={handleChange}
+        onSubmit={handleSubmit}
+      />
 
-        <TextField
-          label="Inspection Type"
-          name="inspectionType"
-          value={formData.inspectionType}
-          onChange={handleChange}
-          fullWidth
-        />
-
-        <TextField
-          label="Date Needed"
-          name="date"
-          type="date"
-          value={formData.date}
-          onChange={handleChange}
-          InputLabelProps={{ shrink: true }}
-          fullWidth
-        />
-
-        <TextField
-          label="Requestor Email"
-          name="email"
-          type="email"
-          value={formData.email}
-          onChange={handleChange}
-          fullWidth
-        />
-
-        <Button variant="contained" onClick={handleSubmit}>
-          Submit
-        </Button>
-      </Box>
+      {pdfUrl && (
+        <Box mt={4}>
+          <Typography variant="h6" gutterBottom>
+            PDF Preview (This is what will be sent)
+          </Typography>
+          <iframe
+            src={pdfUrl}
+            width="100%"
+            height="500px"
+            title="PDF Preview"
+            style={{ border: '1px solid #ccc' }}
+          />
+        </Box>
+      )}
     </Container>
   );
 }
