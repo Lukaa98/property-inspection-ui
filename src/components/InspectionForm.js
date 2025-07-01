@@ -46,7 +46,7 @@ function InspectionForm({ formData, onChange, onSubmit, setMapCenter }) {
         const lat = location.lat();
         const lng = location.lng();
 
-        setZipError(false); // ✅ valid
+        setZipError(false); // valid
         onChange({
           target: {
             name: 'address',
