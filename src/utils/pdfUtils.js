@@ -1,7 +1,7 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
 export async function generateInspectionPDF(formData, mapCenter) {
-  const { address, inspectionType, date, email } = formData;
+  const { name, address, inspectionType, date, email } = formData;
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([600, 800]);
 
@@ -9,7 +9,7 @@ export async function generateInspectionPDF(formData, mapCenter) {
 
   const lines = [
     'Property Inspection Request',
-    '',
+    `Name: ${name}`,
     `Address: ${address}`,
     `Inspection Type: ${inspectionType}`,
     `Date Needed: ${date}`,

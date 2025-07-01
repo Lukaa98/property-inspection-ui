@@ -61,6 +61,13 @@ function InspectionForm({ formData, onChange, onSubmit, setMapCenter }) {
   return (
     <Box display="flex" flexDirection="column" gap={2}>
       <TextField
+        label="Name"
+        name="name"
+        value={formData.name}
+        onChange={onChange}
+        fullWidth
+      />
+      <TextField
         label="Property Address"
         name="address"
         inputRef={autocompleteRef}
