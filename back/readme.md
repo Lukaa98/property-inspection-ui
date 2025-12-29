@@ -1,18 +1,18 @@
-# 1. Deactivate first
-deactivate
-
-# 2. Delete the existing venv
-rm -rf venv
-
-# 3. Recreate it
+# 1. Create it
 python -m venv venv
 
-# 4. Activate again
+# 2. Activate
 source venv/Scripts/activate
 
-# 5. Reinstall deps
+# 3. Install deps
 pip install -r requirements.txt
 
-# 6. Run the backend again on a safe port:
+# 4. Run the backend again on a safe port:
 uvicorn main:app --reload --port 8081
+
+# 5. Deactivate 
+deactivate
+
+# 6. Delete the existing venv
+rm -rf venv
 
