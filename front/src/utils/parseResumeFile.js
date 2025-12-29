@@ -1,64 +1,21 @@
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
-
 export async function parseResumeFile(file) {
-  const text =
-    file.type === 'application/pdf'
-      ? await extractPdfText(file)
-      : await file.text();
+  const formData = new FormData();
+  formData.append("file", file);
 
-  return textToBlocks(text);
-}
-
-async function extractPdfText(file) {
-  const arrayBuffer = await file.arrayBuffer();
-
-  const loadingTask = pdfjsLib.getDocument({
-    data: arrayBuffer,
-    disableWorker: true, // <-- THIS is enough
+  const response = await fetch("http://127.0.0.1:8081/parse-resume", {
+    method: "POST",
+    body: formData,
   });
 
-  const pdf = await loadingTask.promise;
-
-  let fullText = '';
-
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-
-    const pageText = content.items
-      .map((item) => item.str)
-      .join(' ');
-
-    fullText += pageText + '\n';
+  if (!response.ok) {
+    throw new Error("Failed to parse resume");
   }
 
-  return fullText;
-}
+  const data = await response.json();
 
-function textToBlocks(text) {
-  return text
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line, index) => ({
-      id: String(index),
-      text: line,
-      type: guessBlockType(line),
-    }));
-}
-
-function guessBlockType(text) {
-  if (text === text.toUpperCase() && text.length < 40) {
-    return 'section_title';
-  }
-
-  if (/^[-•*]/.test(text)) {
-    return 'experience_bullet';
-  }
-
-  if (/\d{4}/.test(text) && /–|-/.test(text)) {
-    return 'experience_header';
-  }
-
-  return 'unknown';
+  return data.blocks.map((block, index) => ({
+    id: String(index),
+    text: block.text,
+    type: block.type,
+  }));
 }

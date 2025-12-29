@@ -1,56 +1,98 @@
-# Property Inspection UI
+# Resume Builder & Parser
 
-A simple React-based form that allows users to submit property inspection requests. It collects basic details such as address, inspection type, preferred date, and requestor email.
+A full-stack resume parsing and editing application. Users can upload a PDF resume, have it parsed on the backend, and interactively edit and reclassify resume blocks in a modern React UI.
 
-**Live Site**: [https://lukaa98.github.io/property-inspection-ui/](https://lukaa98.github.io/property-inspection-ui/)
+This project is evolving toward a resume-tailoring tool, enabling structured editing and future AI-based optimization for specific job roles.
 
----
+## Architecture Overview
+
+```
+resume-project/
+├── front/   # React frontend (UI)
+└── back/    # Python FastAPI backend (PDF parsing)
+```
 
 ## Built With
 
-- [React](https://reactjs.org/)
-- [Create React App](https://create-react-app.dev/)
-- [Material UI (MUI)](https://mui.com/) – for modern, responsive form components
-- [gh-pages](https://www.npmjs.com/package/gh-pages) – for deployment to GitHub Pages
+### Frontend
+- **React** - Create React App
+- **Material UI (MUI)** - Component library
+- **JavaScript** - No TypeScript required
 
----
+### Backend
+- **FastAPI** - Modern Python web framework
+- **Uvicorn** - ASGI server
+- **pdfplumber** - Reliable PDF text extraction
+- **Python 3.12+**
 
-## Features
+## Current Features
 
-- Simple and intuitive form UI with four fields:
-  - **Property Address**
-  - **Inspection Type**
-  - **Date Needed**
-  - **Requestor Email**
-- Responsive layout using MUI
-- Deployable as a static site via GitHub Pages
+- Upload PDF resumes
+- Backend-based PDF parsing (no browser workers)
+- Resume content split into structured blocks:
+  - Section titles
+  - Experience headers
+  - Experience bullets
+  - Unknown blocks
+- Editable resume blocks in the UI
+- Manual block type correction via dropdowns
+- Clean separation of frontend and backend responsibilities
 
----
+## Planned Features
 
-## Installation
+- Resume tailoring for specific job descriptions
+- AI-assisted block classification
+- Resume export (PDF / DOCX)
+- Block reordering via drag-and-drop
+- Resume versioning
 
-Clone the repository and install dependencies:
+## Getting Started
 
+### Prerequisites
+- Node.js (v16+)
+- Python 3.12+
+- npm or yarn
+
+### Installation
+
+1. Clone the repository
 ```bash
-git clone https://github.com/Lukaa98/property-inspection-ui.git
-cd property-inspection-ui
+git clone <repository-url>
+cd resume-project
+```
+
+2. Install frontend dependencies
+```bash
+cd front
 npm install
+```
+
+3. Install backend dependencies
+```bash
+cd ../back
+pip install -r requirements.txt
+```
+
+### Running the Application
+
+1. Start the backend server
+```bash
+cd back
+uvicorn main:app --reload
+```
+
+2. Start the frontend development server
+```bash
+cd front
 npm start
 ```
 
----
+The application will be available at `http://localhost:3000`
 
-## Deployment
+## Contributing
 
-This project is deployed manually using [gh-pages](https://www.npmjs.com/package/gh-pages).
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-```bash
-npm run deploy
-```
+## License
 
-This command will:
-- Build the app (`npm run build`)
-- Push the `build/` folder to the `gh-pages` branch
-- Publish the site at: [https://lukaa98.github.io/property-inspection-ui/](https://lukaa98.github.io/property-inspection-ui/)
-
-> **Note:** Only authorized users should run `npm run deploy`, as it will overwrite the live site on GitHub Pages.
+This project is licensed under the MIT License - see the LICENSE file for details.
