@@ -1,13 +1,14 @@
-import { Container, Typography, Box } from '@mui/material';
+import { Container, Typography } from '@mui/material';
+import ResumeEditor from './components/ResumeEditor';
 
 function App() {
-
-
   return (
-    <Container maxWidth="sm" sx={{ mt: 4 }}>
+    <Container maxWidth="md" sx={{ mt: 4 }}>
       <Typography variant="h4" gutterBottom>
-        Property Inspection Request
+        Resume Block Editor (Demo)
       </Typography>
+
+      <ResumeEditor />
     </Container>
   );
 }
