@@ -8,7 +8,7 @@ source venv/Scripts/activate
 pip install -r requirements.txt
 
 # 4. Run the backend again on a safe port:
-uvicorn main:app --reload --port 8081
+uvicorn src.main:app --reload --port 8081
 
 # 5. Visit URL:
 http://127.0.0.1:8081/
