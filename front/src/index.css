@@ -11,3 +11,31 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+
+@media print {
+  body {
+    background: white;
+  }
+
+  button,
+  .MuiButton-root,
+  .MuiIconButton-root,
+  .action-buttons {
+    display: none !important;
+  }
+
+  .MuiPaper-root {
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .MuiDivider-root {
+    border-color: #000;
+  }
+
+  .print-container {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
