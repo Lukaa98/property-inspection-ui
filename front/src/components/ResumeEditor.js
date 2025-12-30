@@ -1,116 +1,254 @@
 import { useState } from 'react';
 import {
-  Box, TextField, Button, Stack, Paper, IconButton, Typography,
-  Chip, Divider, Dialog, DialogTitle, DialogContent, DialogActions,
-  List, ListItem, ListItemButton, ListItemText
+  Box, TextField, Button, Stack, Paper, IconButton, Typography, Dialog, DialogTitle, DialogContent, DialogActions,
+  List, ListItem
 } from '@mui/material';
 import { parseResumeFile } from '../utils/parseResumeFile';
-import { Add, Delete, Edit, CheckCircle, SwapHoriz, Email, Phone, Person } from '@mui/icons-material';
+import { Add, Delete, Edit, SwapHoriz } from '@mui/icons-material';
 
-/* ---------------- Contact Info Card ---------------- */
-function ContactInfoCard({ info, onChange, onDelete }) {
+/* ---------------- Contact Info Section ---------------- */
+function ContactInfoSection({ info, onChange, onDelete }) {
+  const [isHovered, setIsHovered] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   return (
-    <Paper
-      elevation={2}
+    <Box
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       sx={{
-        p: 3,
-        mb: 3,
-        border: '1px solid #e0e0e0',
-        borderRadius: '12px',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
+        position: 'relative',
+        mb: 2,
+        p: 2,
+        borderRadius: '4px',
+        border: isHovered ? '2px solid #1976d2' : '2px solid transparent',
+        backgroundColor: isHovered ? '#f0f7ff' : 'transparent',
+        transition: 'all 0.2s',
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <Person sx={{ mr: 1, fontSize: 32 }} />
-        {isEditing ? (
-          <TextField
-            fullWidth
-            variant="standard"
-            value={info.name || ''}
-            onChange={(e) => onChange('name', e.target.value)}
-            sx={{
-              input: { color: 'white', fontSize: '24pt', fontWeight: 'bold' }
-            }}
-          />
-        ) : (
-          <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-            {info.name || 'Your Name'}
-          </Typography>
-        )}
-      </Box>
+      {/* Hover Actions */}
+      {isHovered && (
+        <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
+          <IconButton size="small" onClick={() => setIsEditing(!isEditing)} color="primary">
+            <Edit fontSize="small" />
+          </IconButton>
+        </Box>
+      )}
 
-      <Stack spacing={1}>
-        {info.lines?.map((line, idx) => (
-          <Box key={idx} sx={{ display: 'flex', alignItems: 'center' }}>
-            {line.includes('@') ? <Email sx={{ mr: 1, fontSize: 18 }} /> : <Phone sx={{ mr: 1, fontSize: 18 }} />}
-            {isEditing ? (
-              <TextField
-                fullWidth
-                variant="standard"
-                value={line}
-                onChange={(e) => onChange('line', e.target.value, idx)}
-                sx={{ input: { color: 'white' } }}
-              />
-            ) : (
-              <Typography>{line}</Typography>
-            )}
-          </Box>
-        ))}
-      </Stack>
-
-      <Box sx={{ mt: 2 }}>
-        <Button
-          size="small"
-          onClick={() => setIsEditing(!isEditing)}
-          sx={{ color: 'white', borderColor: 'white' }}
-          variant="outlined"
+      {/* Name */}
+      {isEditing ? (
+        <TextField
+          fullWidth
+          variant="standard"
+          value={info.name || ''}
+          onChange={(e) => onChange('name', e.target.value)}
+          sx={{
+            fontSize: '18pt',
+            fontWeight: 'bold',
+            textAlign: 'center',
+            mb: 1
+          }}
+        />
+      ) : (
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: 'bold',
+            textAlign: 'center',
+            fontSize: '18pt',
+            mb: 1
+          }}
         >
-          {isEditing ? 'Done' : 'Edit'}
-        </Button>
-      </Box>
-    </Paper>
+          {info.name || 'YOUR NAME'}
+        </Typography>
+      )}
+
+      {/* Contact Lines */}
+      <Typography
+        variant="body2"
+        sx={{ textAlign: 'center', color: 'text.secondary' }}
+      >
+        {info.lines?.join(' ● ') || ''}
+      </Typography>
+    </Box>
   );
 }
 
-/* ---------------- Skills Card ---------------- */
-function SkillsCard({ skills, onChange, onDelete }) {
+/* ---------------- Section Header ---------------- */
+function SectionHeader({ text, onRename }) {
+  return (
+    <Typography
+      variant="h6"
+      sx={{
+        fontWeight: 700,
+        textTransform: 'uppercase',
+        borderBottom: '2px solid #000',
+        pb: 0.5,
+        mb: 2,
+        mt: 3,
+        fontSize: '12pt'
+      }}
+    >
+      {text}
+    </Typography>
+  );
+}
+
+/* ---------------- Experience Section ---------------- */
+function ExperienceSection({ experience, onChange, onDelete, onReplace }) {
+  const [isHovered, setIsHovered] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   return (
-    <Paper
-      elevation={2}
+    <Box
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       sx={{
-        p: 3,
-        mb: 3,
-        border: '1px solid #e0e0e0',
-        borderRadius: '12px',
+        position: 'relative',
+        mb: 2,
+        p: 2,
+        borderRadius: '4px',
+        border: isHovered ? '2px solid #1976d2' : '2px solid transparent',
+        backgroundColor: isHovered ? '#fffef7' : 'transparent',
+        transition: 'all 0.2s',
       }}
     >
-      <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-        Skills
-      </Typography>
+      {/* Hover Actions */}
+      {isHovered && (
+        <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
+          <IconButton size="small" onClick={() => setIsEditing(!isEditing)} color="primary">
+            <Edit fontSize="small" />
+          </IconButton>
+          <IconButton size="small" onClick={onReplace} color="secondary">
+            <SwapHoriz fontSize="small" />
+          </IconButton>
+          <IconButton size="small" onClick={onDelete} color="error">
+            <Delete fontSize="small" />
+          </IconButton>
+        </Box>
+      )}
 
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-        {skills.skills?.map((skill, idx) => (
-          <Chip
-            key={idx}
-            label={skill}
-            onDelete={isEditing ? () => onChange('deleteSkill', idx) : undefined}
-            color="primary"
-            variant="outlined"
-          />
+      {/* Job Title */}
+      {isEditing ? (
+        <TextField
+          fullWidth
+          variant="standard"
+          value={experience.title || ''}
+          onChange={(e) => onChange('title', e.target.value)}
+          sx={{ fontWeight: 600, fontSize: '11pt', mb: 0.5 }}
+        />
+      ) : (
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, fontSize: '11pt' }}>
+          {experience.title || 'Job Title'}
+        </Typography>
+      )}
+
+      {/* Company / Location / Dates */}
+      {isEditing ? (
+        <TextField
+          fullWidth
+          variant="standard"
+          value={experience.header}
+          onChange={(e) => onChange('header', e.target.value)}
+          sx={{ fontSize: '10pt', mb: 1 }}
+        />
+      ) : (
+        <Typography variant="body2" sx={{ fontSize: '10pt', mb: 1 }}>
+          {experience.header}
+        </Typography>
+      )}
+
+      {/* Bullet Points */}
+      <Box>
+        {experience.bullets?.map((bullet, idx) => (
+          <Box key={idx} sx={{ display: 'flex', mb: 0.5, alignItems: 'flex-start' }}>
+            <Typography sx={{ mr: 1 }}>•</Typography>
+            {isEditing ? (
+              <Box sx={{ flex: 1, display: 'flex', gap: 1 }}>
+                <TextField
+                  fullWidth
+                  multiline
+                  variant="standard"
+                  value={bullet}
+                  onChange={(e) => onChange('bullet', e.target.value, idx)}
+                  sx={{ fontSize: '10pt' }}
+                />
+                <IconButton size="small" onClick={() => onChange('deleteBullet', idx)}>
+                  <Delete fontSize="small" />
+                </IconButton>
+              </Box>
+            ) : (
+              <Typography variant="body2" sx={{ flex: 1, fontSize: '10pt', lineHeight: 1.5 }}>
+                {bullet}
+              </Typography>
+            )}
+          </Box>
         ))}
+
+        {isEditing && (
+          <Button size="small" onClick={() => onChange('addBullet')} startIcon={<Add />} sx={{ mt: 1 }}>
+            Add Bullet
+          </Button>
+        )}
       </Box>
+    </Box>
+  );
+}
+
+/* ---------------- Skills Section ---------------- */
+function SkillsSection({ skills, onChange }) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+
+  return (
+    <Box
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      sx={{
+        position: 'relative',
+        mb: 2,
+        p: 2,
+        borderRadius: '4px',
+        border: isHovered ? '2px solid #1976d2' : '2px solid transparent',
+        backgroundColor: isHovered ? '#f0f7ff' : 'transparent',
+        transition: 'all 0.2s',
+      }}
+    >
+      {isHovered && (
+        <IconButton
+          size="small"
+          onClick={() => setIsEditing(!isEditing)}
+          color="primary"
+          sx={{ position: 'absolute', top: 8, right: 8 }}
+        >
+          <Edit fontSize="small" />
+        </IconButton>
+      )}
+
+      {/* Skills as inline text with bullets */}
+      <Typography variant="body2" sx={{ fontSize: '10pt' }}>
+        {skills.skills?.map((skill, idx) => (
+          <span key={idx}>
+            {isEditing && (
+              <IconButton
+                size="small"
+                onClick={() => onChange('deleteSkill', idx)}
+                sx={{ p: 0, mr: 0.5 }}
+              >
+                <Delete fontSize="small" />
+              </IconButton>
+            )}
+            ● {skill}
+            {idx < skills.skills.length - 1 ? ' ' : ''}
+          </span>
+        ))}
+      </Typography>
 
       {isEditing && (
         <TextField
           fullWidth
           size="small"
-          placeholder="Add new skill (press Enter)"
-          sx={{ mt: 2 }}
+          placeholder="Add skill (press Enter)"
+          sx={{ mt: 1 }}
           onKeyPress={(e) => {
             if (e.key === 'Enter' && e.target.value.trim()) {
               onChange('addSkill', e.target.value.trim());
@@ -119,234 +257,108 @@ function SkillsCard({ skills, onChange, onDelete }) {
           }}
         />
       )}
-
-      <Box sx={{ mt: 2 }}>
-        <Button size="small" variant="outlined" onClick={() => setIsEditing(!isEditing)}>
-          {isEditing ? 'Done' : 'Edit'}
-        </Button>
-      </Box>
-    </Paper>
+    </Box>
   );
 }
 
-/* ---------------- Education Card ---------------- */
-function EducationCard({ education, onChange, onDelete }) {
+/* ---------------- Education Section ---------------- */
+function EducationSection({ education, onChange, onDelete }) {
+  const [isHovered, setIsHovered] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   return (
-    <Paper
-      elevation={2}
+    <Box
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       sx={{
-        p: 3,
-        mb: 3,
-        border: '1px solid #e0e0e0',
-        borderRadius: '12px',
+        position: 'relative',
+        mb: 2,
+        p: 2,
+        borderRadius: '4px',
+        border: isHovered ? '2px solid #1976d2' : '2px solid transparent',
+        backgroundColor: isHovered ? '#f0f7ff' : 'transparent',
+        transition: 'all 0.2s',
       }}
     >
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <Box sx={{ flex: 1 }}>
-          {isEditing ? (
-            <TextField
-              fullWidth
-              variant="standard"
-              value={education.degree}
-              onChange={(e) => onChange('degree', e.target.value)}
-              sx={{ mb: 1, fontWeight: 600 }}
-            />
-          ) : (
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-              {education.degree}
-            </Typography>
-          )}
-
-          {education.details?.map((detail, idx) => (
-            <Typography key={idx} variant="body2" color="text.secondary">
-              {detail}
-            </Typography>
-          ))}
+      {isHovered && (
+        <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
+          <IconButton size="small" onClick={() => setIsEditing(!isEditing)} color="primary">
+            <Edit fontSize="small" />
+          </IconButton>
+          <IconButton size="small" onClick={onDelete} color="error">
+            <Delete fontSize="small" />
+          </IconButton>
         </Box>
+      )}
 
-        <IconButton size="small" onClick={onDelete} color="error">
-          <Delete fontSize="small" />
-        </IconButton>
-      </Box>
+      {isEditing ? (
+        <TextField
+          fullWidth
+          variant="standard"
+          value={education.degree}
+          onChange={(e) => onChange('degree', e.target.value)}
+          sx={{ fontWeight: 600, fontSize: '10pt', mb: 0.5 }}
+        />
+      ) : (
+        <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '10pt' }}>
+          {education.degree}
+        </Typography>
+      )}
 
-      <Box sx={{ mt: 2 }}>
-        <Button size="small" variant="outlined" onClick={() => setIsEditing(!isEditing)}>
-          {isEditing ? 'Done' : 'Edit'}
-        </Button>
-      </Box>
-    </Paper>
+      {education.details?.map((detail, idx) => (
+        <Typography key={idx} variant="body2" sx={{ fontSize: '10pt', color: 'text.secondary' }}>
+          {detail}
+        </Typography>
+      ))}
+    </Box>
   );
 }
 
-/* ---------------- Certificates Card ---------------- */
-function CertificatesCard({ certificates, onChange, onDelete }) {
+/* ---------------- Certificates Section ---------------- */
+function CertificatesSection({ certificates, onChange }) {
+  const [isHovered, setIsHovered] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   return (
-    <Paper
-      elevation={2}
+    <Box
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       sx={{
-        p: 3,
-        mb: 3,
-        border: '1px solid #e0e0e0',
-        borderRadius: '12px',
+        position: 'relative',
+        mb: 2,
+        p: 2,
+        borderRadius: '4px',
+        border: isHovered ? '2px solid #1976d2' : '2px solid transparent',
+        backgroundColor: isHovered ? '#f0f7ff' : 'transparent',
+        transition: 'all 0.2s',
       }}
     >
-      <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-        Certificates
-      </Typography>
+      {isHovered && (
+        <IconButton
+          size="small"
+          onClick={() => setIsEditing(!isEditing)}
+          color="primary"
+          sx={{ position: 'absolute', top: 8, right: 8 }}
+        >
+          <Edit fontSize="small" />
+        </IconButton>
+      )}
 
-      <List dense>
+      <List dense sx={{ p: 0 }}>
         {certificates.certificates?.map((cert, idx) => (
-          <ListItem key={idx} disablePadding>
-            <ListItemText primary={`• ${cert}`} />
+          <ListItem key={idx} sx={{ p: 0, display: 'flex', alignItems: 'flex-start' }}>
+            <Typography variant="body2" sx={{ fontSize: '10pt' }}>
+              ● {cert}
+            </Typography>
             {isEditing && (
-              <IconButton size="small" onClick={() => onChange('deleteCert', idx)}>
+              <IconButton size="small" onClick={() => onChange('deleteCert', idx)} sx={{ ml: 1 }}>
                 <Delete fontSize="small" />
               </IconButton>
             )}
           </ListItem>
         ))}
       </List>
-
-      <Box sx={{ mt: 2 }}>
-        <Button size="small" variant="outlined" onClick={() => setIsEditing(!isEditing)}>
-          {isEditing ? 'Done' : 'Edit'}
-        </Button>
-      </Box>
-    </Paper>
-  );
-}
-
-/* ---------------- Experience Card ---------------- */
-function ExperienceCard({ experience, onChange, onDelete, onReplace }) {
-  const [isEditing, setIsEditing] = useState(false);
-
-  return (
-    <Paper
-      elevation={2}
-      sx={{
-        p: 3,
-        mb: 3,
-        border: '1px solid #e0e0e0',
-        borderRadius: '12px',
-        position: 'relative',
-        '&:hover .action-buttons': { opacity: 1 },
-      }}
-    >
-      {/* Action Buttons */}
-      <Box
-        className="action-buttons"
-        sx={{
-          position: 'absolute',
-          top: 12,
-          right: 12,
-          display: 'flex',
-          gap: 1,
-          opacity: 0,
-          transition: 'opacity 0.2s',
-        }}
-      >
-        {/* <Chip 
-          icon={<CheckCircle />} 
-          label="Looks good" 
-          size="small" 
-          color="success" 
-          variant="outlined"
-        />
-        <IconButton size="small" onClick={() => setIsEditing(!isEditing)} color="primary">
-          <Edit fontSize="small" />
-        </IconButton> */}
-        <IconButton size="small" onClick={onReplace} color="secondary">
-          <SwapHoriz fontSize="small" />
-        </IconButton>
-        <IconButton size="small" onClick={onDelete} color="error">
-          <Delete fontSize="small" />
-        </IconButton>
-      </Box>
-
-      {/* Job Title */}
-      <Box sx={{ mb: 2 }}>
-        {isEditing ? (
-          <TextField
-            fullWidth
-            variant="standard"
-            value={experience.title || ''}
-            onChange={(e) => onChange('title', e.target.value)}
-            sx={{ fontWeight: 600, fontSize: '14pt' }}
-          />
-        ) : (
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            {experience.title || 'Job Title'}
-          </Typography>
-        )}
-      </Box>
-
-      {/* Company + Location + Dates */}
-      {isEditing ? (
-        <TextField
-          fullWidth
-          variant="standard"
-          value={experience.header}
-          onChange={(e) => onChange('header', e.target.value)}
-          sx={{ mb: 2 }}
-        />
-      ) : (
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {experience.header}
-        </Typography>
-      )}
-
-      <Divider sx={{ my: 2 }} />
-
-      {/* Bullet Points */}
-      <Box>
-        {experience.bullets?.map((bullet, idx) => (
-          <Box key={idx} sx={{ display: 'flex', mb: 1, alignItems: 'flex-start' }}>
-            <Typography sx={{ mr: 1, mt: '2px' }}>•</Typography>
-            {isEditing ? (
-              <TextField
-                fullWidth
-                multiline
-                variant="standard"
-                value={bullet}
-                onChange={(e) => onChange('bullet', e.target.value, idx)}
-                sx={{ fontSize: '13pt' }}
-              />
-            ) : (
-              <Typography variant="body2" sx={{ flex: 1, lineHeight: 1.6 }}>
-                {bullet}
-              </Typography>
-            )}
-            {isEditing && (
-              <IconButton size="small" onClick={() => onChange('deleteBullet', idx)}>
-                <Delete fontSize="small" />
-              </IconButton>
-            )}
-          </Box>
-        ))}
-        {isEditing && (
-          <Button size="small" onClick={() => onChange('addBullet')} startIcon={<Add />}>
-            Add Bullet
-          </Button>
-        )}
-      </Box>
-
-      {/* Footer Actions */}
-      <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
-        <Button size="small" variant="outlined" startIcon={<Edit />} onClick={() => setIsEditing(!isEditing)}>
-          {isEditing ? 'Done' : 'Edit'}
-        </Button>
-        <Button size="small" variant="outlined" color="secondary" startIcon={<SwapHoriz />} onClick={onReplace}>
-          Replace
-        </Button>
-        <Button size="small" variant="outlined" color="error" onClick={onDelete}>
-          Delete
-        </Button>
-      </Box>
-    </Paper>
+    </Box>
   );
 }
 
@@ -357,7 +369,7 @@ function ReplaceDialog({ open, onClose, templates, onSelect }) {
       <DialogTitle>Replace with Template</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Select a template to replace this experience with:
+          Select a template to replace this experience:
         </Typography>
 
         <Stack spacing={2}>
@@ -527,24 +539,6 @@ function TemplateEditor({ onSave, onCancel }) {
   );
 }
 
-/* ---------------- Section Title ---------------- */
-function SectionTitle({ text }) {
-  return (
-    <Typography
-      variant="h5"
-      sx={{
-        fontWeight: 700,
-        color: '#1976d2',
-        borderBottom: '3px solid #1976d2',
-        pb: 1,
-        mb: 3,
-        mt: 4
-      }}
-    >
-      {text}
-    </Typography>
-  );
-}
 /* ---------------- Main Editor ---------------- */
 export default function ResumeEditor() {
   const [items, setItems] = useState([]);
@@ -552,13 +546,11 @@ export default function ResumeEditor() {
   const [showTemplateForm, setShowTemplateForm] = useState(false);
   const [replaceDialog, setReplaceDialog] = useState({ open: false, experienceId: null });
 
-  /* ---------- Upload ---------- */
   const handleUpload = async (file) => {
     const parsedItems = await parseResumeFile(file);
     setItems(parsedItems);
   };
 
-  /* ---------- Update Item ---------- */
   const updateItem = (id, field, value, index) => {
     setItems((prev) =>
       prev.map((item) => {
@@ -578,21 +570,17 @@ export default function ResumeEditor() {
           case 'experience_group': {
             if (field === 'title') return { ...item, title: value };
             if (field === 'header') return { ...item, header: value };
-
             if (field === 'bullet') {
               const bullets = [...item.bullets];
               bullets[index] = value;
               return { ...item, bullets };
             }
-
             if (field === 'addBullet') {
               return { ...item, bullets: [...item.bullets, ''] };
             }
-
             if (field === 'deleteBullet') {
               return { ...item, bullets: item.bullets.filter((_, i) => i !== index) };
             }
-
             return item;
           }
 
@@ -628,12 +616,10 @@ export default function ResumeEditor() {
     );
   };
 
-  /* ---------- Delete Item ---------- */
   const deleteItem = (id) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
-  /* ---------- Replace Experience ---------- */
   const openReplaceDialog = (id) => {
     setReplaceDialog({ open: true, experienceId: id });
   };
@@ -654,7 +640,6 @@ export default function ResumeEditor() {
     setReplaceDialog({ open: false, experienceId: null });
   };
 
-  /* ---------- Templates ---------- */
   const saveTemplate = (template) => {
     setTemplates((prev) => [...prev, { ...template, id: Date.now().toString() }]);
     setShowTemplateForm(false);
@@ -677,103 +662,150 @@ export default function ResumeEditor() {
     ]);
   };
 
-  /* ---------- Render ---------- */
+  const handleExportPDF = async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:8081/export-resume', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ blocks: items }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to export resume');
+      }
+
+      // Download the PDF
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'resume.pdf';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      alert('Failed to export PDF. Please try again.');
+    }
+  };
+
   return (
-    <Box sx={{ maxWidth: 900, mx: 'auto', p: 3 }}>
-      <SectionTitle text="Resume Editor" />
-      <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-        <Button variant="contained" component="label">
-          Upload Resume (PDF)
-          <input hidden type="file" accept="application/pdf" onChange={(e) => handleUpload(e.target.files[0])} />
-        </Button>
-
-        <Button variant="contained" color="success" onClick={() => window.print()}>
-          Export Resume (PDF)
-        </Button>
-      </Box>
-
-      <Box className="print-container">
-        {items.map((item) => {
-          switch (item.type) {
-            case 'contact_info':
-              return (
-                <ContactInfoCard
-                  key={item.id}
-                  info={item}
-                  onChange={(field, value, idx) =>
-                    updateItem(item.id, field, value, idx)
-                  }
-                  onDelete={() => deleteItem(item.id)}
-                />
-              );
-
-            case 'section_title':
-              return <SectionTitle key={item.id} text={item.text} />;
-
-            case 'experience_group':
-              return (
-                <ExperienceCard
-                  key={item.id}
-                  experience={item}
-                  onChange={(field, value, idx) =>
-                    updateItem(item.id, field, value, idx)
-                  }
-                  onDelete={() => deleteItem(item.id)}
-                  onReplace={() => openReplaceDialog(item.id)}
-                />
-              );
-
-            case 'skills_group':
-              return (
-                <SkillsCard
-                  key={item.id}
-                  skills={item}
-                  onChange={(field, value, idx) =>
-                    updateItem(item.id, field, value, idx)
-                  }
-                />
-              );
-
-            case 'education_group':
-              return (
-                <EducationCard
-                  key={item.id}
-                  education={item}
-                  onChange={(field, value) =>
-                    updateItem(item.id, field, value)
-                  }
-                  onDelete={() => deleteItem(item.id)}
-                />
-              );
-
-            case 'certificates_group':
-              return (
-                <CertificatesCard
-                  key={item.id}
-                  certificates={item}
-                  onChange={(field, value, idx) =>
-                    updateItem(item.id, field, value, idx)
-                  }
-                />
-              );
-
-            default:
-              return null;
-          }
-        })}
-      </Box>
+    <Box sx={{ display: 'flex', height: '100vh', gap: 3, p: 3, bgcolor: '#f9f9f9' }}>
+      {/* Left - Resume Preview */}
+      <Box sx={{ flex: 1, overflowY: 'auto' }}>
 
 
-      {/* Templates */}
-      <Box className="no-print">
-        <SectionTitle text="Experience Templates" />
-
-        {showTemplateForm ? (
-          <TemplateEditor onSave={saveTemplate} onCancel={() => setShowTemplateForm(false)} />
-        ) : (
-          <Button variant="outlined" onClick={() => setShowTemplateForm(true)}>
-            Create New Template
+        <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+          <Button variant="contained" component="label">
+            Upload Resume (PDF)
+            <input hidden type="file" accept="application/pdf" onChange={(e) => e.target.files && handleUpload(e.target.files[0])} />
           </Button>
+
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handleExportPDF}
+            disabled={items.length === 0}
+          >
+            Export PDF
+          </Button>
+        </Stack>
+
+        {/* Resume Paper */}
+        <Paper
+          elevation={3}
+          sx={{
+            width: '8.5in',
+            minHeight: '11in',
+            p: '0.75in',
+            mx: 'auto',
+            bgcolor: 'white',
+            fontFamily: '"Times New Roman", serif',
+            fontSize: '11pt'
+          }}
+        >
+          {items.map((item) => {
+            switch (item.type) {
+              case 'contact_info':
+                return (
+                  <ContactInfoSection
+                    key={item.id}
+                    info={item}
+                    onChange={(field, value, idx) => updateItem(item.id, field, value, idx)}
+                    onDelete={() => deleteItem(item.id)}
+                  />
+                );
+
+              case 'section_title':
+                return <SectionHeader key={item.id} text={item.text} />;
+
+              case 'experience_group':
+                return (
+                  <ExperienceSection
+                    key={item.id}
+                    experience={item}
+                    onChange={(field, value, idx) => updateItem(item.id, field, value, idx)}
+                    onDelete={() => deleteItem(item.id)}
+                    onReplace={() => openReplaceDialog(item.id)}
+                  />
+                );
+
+              case 'skills_group':
+                return (
+                  <SkillsSection
+                    key={item.id}
+                    skills={item}
+                    onChange={(field, value, idx) => updateItem(item.id, field, value, idx)}
+                  />
+                );
+
+              case 'education_group':
+                return (
+                  <EducationSection
+                    key={item.id}
+                    education={item}
+                    onChange={(field, value) => updateItem(item.id, field, value)}
+                    onDelete={() => deleteItem(item.id)}
+                  />
+                );
+
+              case 'certificates_group':
+                return (
+                  <CertificatesSection
+                    key={item.id}
+                    certificates={item}
+                    onChange={(field, value, idx) => updateItem(item.id, field, value, idx)}
+                  />
+                );
+
+              default:
+                return null;
+            }
+          })}
+        </Paper>
+      </Box>
+
+      {/* Right - Templates */}
+      <Box sx={{ width: '400px', overflowY: 'auto' }}>
+        <Typography variant="h5" gutterBottom>
+          Experience Templates
+        </Typography>
+
+        <Button
+          variant="contained"
+          startIcon={<Add />}
+          fullWidth
+          sx={{ mb: 2 }}
+          onClick={() => setShowTemplateForm(true)}
+        >
+          New Template
+        </Button>
+
+        {showTemplateForm && (
+          <TemplateEditor onSave={saveTemplate} onCancel={() => setShowTemplateForm(false)} />
         )}
 
         <Box sx={{ mt: 2 }}>
@@ -787,8 +819,6 @@ export default function ResumeEditor() {
           ))}
         </Box>
       </Box>
-
-
 
       {/* Replace Dialog */}
       <ReplaceDialog

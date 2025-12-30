@@ -3,6 +3,19 @@ from fastapi.middleware.cors import CORSMiddleware
 import pdfplumber
 import re
 
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, ListFlowable, ListItem
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
+from io import BytesIO
+from fastapi.responses import StreamingResponse
+
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib import colors
+from io import BytesIO
+from fastapi.responses import StreamingResponse
+
 app = FastAPI()
 
 app.add_middleware(
@@ -283,6 +296,8 @@ def parse_certificates_section(blocks, start_idx):
         return {"items": {"type": "certificates_group", "certificates": certificates}, "next_index": i}
     return {"items": None, "next_index": i}
 
+
+
 def parse_projects_section(blocks, start_idx):
     """Parse projects/training section"""
     projects = []
@@ -321,3 +336,210 @@ def extract_company(header_text: str) -> str:
     if parts:
         return parts[0].strip()
     return header_text[:40].strip()
+
+
+@app.post("/export-resume")
+async def export_resume(resume_data: dict):
+    """Generate a PDF from the structured resume data - preserving original format"""
+    buffer = BytesIO()
+    
+    # Create PDF document with exact margins
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=letter,
+        rightMargin=0.75*inch,
+        leftMargin=0.75*inch,
+        topMargin=0.5*inch,
+        bottomMargin=0.5*inch
+    )
+    
+    story = []
+    styles = getSampleStyleSheet()
+    
+    # EXACT STYLES TO MATCH ORIGINAL RESUME
+    name_style = ParagraphStyle(
+        'Name',
+        parent=styles['Normal'],
+        fontSize=16,
+        fontName='Helvetica-Bold',
+        alignment=TA_CENTER,
+        spaceAfter=6,
+        spaceBefore=0
+    )
+    
+    contact_style = ParagraphStyle(
+        'Contact',
+        parent=styles['Normal'],
+        fontSize=9,
+        alignment=TA_CENTER,
+        spaceAfter=12,
+        spaceBefore=0
+    )
+    
+    section_header_style = ParagraphStyle(
+        'SectionHeader',
+        parent=styles['Normal'],
+        fontSize=11,
+        fontName='Helvetica-Bold',
+        spaceAfter=6,
+        spaceBefore=10,
+        textTransform='uppercase',
+        borderWidth=0,
+        borderPadding=0,
+        borderColor=colors.black,
+        underlineProportion=0.15,
+        underlineGap=2
+    )
+    
+    job_title_style = ParagraphStyle(
+        'JobTitle',
+        parent=styles['Normal'],
+        fontSize=10,
+        fontName='Helvetica-Bold',
+        spaceAfter=2,
+        spaceBefore=6
+    )
+    
+    job_header_style = ParagraphStyle(
+        'JobHeader',
+        parent=styles['Normal'],
+        fontSize=10,
+        spaceAfter=4,
+        spaceBefore=0
+    )
+    
+    bullet_style = ParagraphStyle(
+        'Bullet',
+        parent=styles['Normal'],
+        fontSize=10,
+        leftIndent=0,
+        spaceAfter=3,
+        spaceBefore=0,
+        leading=12
+    )
+    
+    body_text_style = ParagraphStyle(
+        'BodyText',
+        parent=styles['Normal'],
+        fontSize=10,
+        spaceAfter=4,
+        spaceBefore=0,
+        leading=12
+    )
+    
+    skills_style = ParagraphStyle(
+        'Skills',
+        parent=styles['Normal'],
+        fontSize=10,
+        spaceAfter=6,
+        spaceBefore=0,
+        leading=12
+    )
+    
+    # Process resume data
+    blocks = resume_data.get('blocks', [])
+    
+    for block in blocks:
+        block_type = block.get('type')
+        
+        if block_type == 'contact_info':
+            # Name - centered and bold
+            name = block.get('name', '')
+            if name:
+                story.append(Paragraph(name.upper(), name_style))
+            
+            # Contact info - centered with bullets
+            contact_lines = block.get('lines', [])
+            if contact_lines:
+                contact_text = ' ● '.join(contact_lines)
+                story.append(Paragraph(contact_text, contact_style))
+        
+        elif block_type == 'section_title':
+            # Section headers - bold, uppercase, with underline
+            text = block.get('text', '').upper()
+            
+            # Create underlined section header using Table for precise control
+            section_para = Paragraph(f'<b>{text}</b>', section_header_style)
+            story.append(section_para)
+            
+            # Add a thin line under section header
+            line_table = Table([['']], colWidths=[7*inch])
+            line_table.setStyle(TableStyle([
+                ('LINEBELOW', (0, 0), (-1, -1), 1, colors.black),
+                ('TOPPADDING', (0, 0), (-1, -1), 0),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ]))
+            story.append(line_table)
+        
+        elif block_type == 'experience_group':
+            # Job title - bold
+            title = block.get('title', '')
+            if title:
+                story.append(Paragraph(f'<b>{title}</b>', job_title_style))
+            
+            # Company/Location/Dates - regular weight
+            header = block.get('header', '')
+            if header:
+                story.append(Paragraph(header, job_header_style))
+            
+            # Bullets - with bullet character
+            bullets = block.get('bullets', [])
+            for bullet in bullets:
+                bullet_text = f'● {bullet}'
+                story.append(Paragraph(bullet_text, bullet_style))
+            
+            # Add spacing after experience
+            story.append(Spacer(1, 0.08*inch))
+        
+        elif block_type == 'skills_group':
+            # Skills with vertical bars or bullets
+            skills = block.get('skills', [])
+            if skills:
+                # Try to detect original separator (| or ●)
+                skills_text = ' ● '.join(skills)
+                story.append(Paragraph(skills_text, skills_style))
+        
+        elif block_type == 'education_group':
+            # Education degree/info
+            degree = block.get('degree', '')
+            if degree:
+                story.append(Paragraph(degree, body_text_style))
+            
+            # Additional details
+            details = block.get('details', [])
+            for detail in details:
+                story.append(Paragraph(detail, body_text_style))
+            
+            story.append(Spacer(1, 0.08*inch))
+        
+        elif block_type == 'certificates_group':
+            # Certificates as inline text with separators
+            certificates = block.get('certificates', [])
+            if certificates:
+                # Format: Cert1 | Cert2 | Cert3
+                cert_text = ' | '.join(certificates)
+                story.append(Paragraph(f'● {cert_text}', body_text_style))
+        
+        elif block_type == 'project_group':
+            # Projects
+            title = block.get('title', '')
+            if title:
+                story.append(Paragraph(f'<b>{title}</b>', job_title_style))
+            
+            bullets = block.get('bullets', [])
+            for bullet in bullets:
+                bullet_text = f'• {bullet}'
+                story.append(Paragraph(bullet_text, bullet_style))
+            
+            story.append(Spacer(1, 0.08*inch))
+    
+    # Build PDF
+    doc.build(story)
+    
+    # Return PDF
+    buffer.seek(0)
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=resume_updated.pdf"}
+    )
