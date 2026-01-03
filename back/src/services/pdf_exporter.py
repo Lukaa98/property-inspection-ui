@@ -1,162 +1,97 @@
+from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-from reportlab.lib.enums import TA_CENTER
-from reportlab.lib import colors
+from reportlab.pdfbase.pdfmetrics import getAscent
 from io import BytesIO
-from typing import Dict, List
-
-def create_pdf_styles():
-    """Define all PDF styles"""
-    styles = getSampleStyleSheet()
-    
-    custom_styles = {
-        'name': ParagraphStyle(
-            'Name',
-            parent=styles['Normal'],
-            fontSize=16,
-            fontName='Helvetica-Bold',
-            alignment=TA_CENTER,
-            spaceAfter=6,
-            spaceBefore=0
-        ),
-        'contact': ParagraphStyle(
-            'Contact',
-            parent=styles['Normal'],
-            fontSize=9,
-            alignment=TA_CENTER,
-            spaceAfter=12,
-            spaceBefore=0
-        ),
-        'section_header': ParagraphStyle(
-            'SectionHeader',
-            parent=styles['Normal'],
-            fontSize=11,
-            fontName='Helvetica-Bold',
-            spaceAfter=6,
-            spaceBefore=10,
-        ),
-        'job_title': ParagraphStyle(
-            'JobTitle',
-            parent=styles['Normal'],
-            fontSize=10,
-            fontName='Helvetica-Bold',
-            spaceAfter=2,
-            spaceBefore=6
-        ),
-        'job_header': ParagraphStyle(
-            'JobHeader',
-            parent=styles['Normal'],
-            fontSize=10,
-            spaceAfter=4,
-            spaceBefore=0
-        ),
-        'bullet': ParagraphStyle(
-            'Bullet',
-            parent=styles['Normal'],
-            fontSize=10,
-            leftIndent=0,
-            spaceAfter=3,
-            spaceBefore=0,
-            leading=12
-        ),
-        'body_text': ParagraphStyle(
-            'BodyText',
-            parent=styles['Normal'],
-            fontSize=10,
-            spaceAfter=4,
-            spaceBefore=0,
-            leading=12
-        ),
-    }
-    
-    return custom_styles
 
 
-def generate_resume_pdf(resume_data: Dict) -> BytesIO:
-    """Generate PDF from structured resume data"""
+FONT_MAP = {
+    ("Times", False, False): "Times-Roman",
+    ("Times", True, False): "Times-Bold",
+    ("Times", False, True): "Times-Italic",
+    ("Times", True, True): "Times-BoldItalic",
+}
+
+
+
+def resolve_font(font_name: str, bold: bool, italic: bool) -> str:
+    base = "Times"
+    return FONT_MAP.get((base, bold, italic), "Times-Roman")
+
+
+def draw_text(c, text, x, y, font, size, page_height):
+    """
+    Draw text using baseline-corrected Y coordinate.
+    """
+    ascent = getAscent(font) / 1000 * size
+    corrected_y = page_height - y - ascent
+    c.drawString(x, corrected_y, text)
+    return corrected_y
+
+
+def draw_bullet(c, x, y, page_height, size):
+    """
+    Draw bullet as a vector circle (font-independent).
+    """
+    radius = size * 0.18
+    cy = page_height - y - size * 0.55
+    c.circle(x + radius, cy, radius, stroke=0, fill=1)
+
+
+def export_resume_pdf(layout_data: dict) -> BytesIO:
     buffer = BytesIO()
-    
-    doc = SimpleDocTemplate(
-        buffer,
-        pagesize=letter,
-        rightMargin=0.75*inch,
-        leftMargin=0.75*inch,
-        topMargin=0.5*inch,
-        bottomMargin=0.5*inch
-    )
-    
-    story = []
-    styles = create_pdf_styles()
-    blocks = resume_data.get('blocks', [])
-    
-    for block in blocks:
-        block_type = block.get('type')
-        
-        if block_type == 'contact_info':
-            name = block.get('name', '')
-            if name:
-                story.append(Paragraph(name.upper(), styles['name']))
-            
-            contact_lines = block.get('lines', [])
-            if contact_lines:
-                contact_text = ' ● '.join(contact_lines)
-                story.append(Paragraph(contact_text, styles['contact']))
-        
-        elif block_type == 'section_title':
-            text = block.get('text', '').upper()
-            section_para = Paragraph(f'<b>{text}</b>', styles['section_header'])
-            story.append(section_para)
-            
-            # Underline
-            line_table = Table([['']], colWidths=[7*inch])
-            line_table.setStyle(TableStyle([
-                ('LINEBELOW', (0, 0), (-1, -1), 1, colors.black),
-                ('TOPPADDING', (0, 0), (-1, -1), 0),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-            ]))
-            story.append(line_table)
-        
-        elif block_type == 'experience_group':
-            title = block.get('title', '')
-            if title:
-                story.append(Paragraph(f'<b>{title}</b>', styles['job_title']))
-            
-            header = block.get('header', '')
-            if header:
-                story.append(Paragraph(header, styles['job_header']))
-            
-            bullets = block.get('bullets', [])
-            for bullet in bullets:
-                bullet_text = f'● {bullet}'
-                story.append(Paragraph(bullet_text, styles['bullet']))
-            
-            story.append(Spacer(1, 0.08*inch))
-        
-        elif block_type == 'skills_group':
-            skills = block.get('skills', [])
-            if skills:
-                skills_text = ' ● '.join(skills)
-                story.append(Paragraph(skills_text, styles['body_text']))
-        
-        elif block_type == 'education_group':
-            degree = block.get('degree', '')
-            if degree:
-                story.append(Paragraph(degree, styles['body_text']))
-            
-            details = block.get('details', [])
-            for detail in details:
-                story.append(Paragraph(detail, styles['body_text']))
-            
-            story.append(Spacer(1, 0.08*inch))
-        
-        elif block_type == 'certificates_group':
-            certificates = block.get('certificates', [])
-            if certificates:
-                cert_text = ' | '.join(certificates)
-                story.append(Paragraph(f'● {cert_text}', styles['body_text']))
-    
-    doc.build(story)
+    c = canvas.Canvas(buffer, pagesize=letter)
+
+    for page in layout_data["pages"]:
+        page_height = page["height"]
+
+        for el in page["elements"]:
+            font = resolve_font(
+                el["font_name"],
+                el["is_bold"],
+                el["is_italic"]
+            )
+
+            # Slight normalization to counter font-metric inflation
+            render_size = el["font_size"] * 0.97
+            c.setFont(font, render_size)
+
+            text = el["text"]
+
+            # Bullet handling (strip glyph, draw manually)
+            if text.strip().startswith(("●", "•")):
+                clean_text = text.lstrip("●• ").lstrip()
+                draw_bullet(c, el["x"], el["y"], page_height, render_size)
+                text_x = el["x"] + render_size * 1.2
+            else:
+                clean_text = text
+                text_x = el["x"]
+
+            baseline_y = draw_text(
+                c,
+                clean_text,
+                text_x,
+                el["y"],
+                font,
+                render_size,
+                page_height
+            )
+
+            # Link rectangle aligned to baseline
+            if el.get("link"):
+                text_width = c.stringWidth(clean_text, font, render_size)
+                c.linkURL(
+                    el["link"],
+                    (
+                        text_x,
+                        baseline_y,
+                        text_x + text_width,
+                        baseline_y + render_size
+                    ),
+                    relative=0
+                )
+
+        c.showPage()
+
+    c.save()
     buffer.seek(0)
     return buffer

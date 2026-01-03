@@ -1,59 +1,83 @@
-import pdfplumber
-import re
-from typing import List, Dict
-
-def extract_text_from_pdf(file) -> str:
-    """Extract all text from PDF"""
-    text_lines = []
-    
-    with pdfplumber.open(file) as pdf:
-        for page in pdf.pages:
-            page_text = page.extract_text() or ""
-            text_lines.append(page_text)
-    
-    return "\n".join(text_lines)
+import fitz  # PyMuPDF
+from dataclasses import dataclass, asdict
+from typing import Dict, List
+import uuid
 
 
-def guess_block_type(text: str) -> str:
-    """Basic type detection for fallback parsing"""
-    
-    # Section headers
-    if text.isupper() and len(text) < 60:
-        return "section_title"
-    
-    # Bullets
-    if text.startswith(("●", "•", "-", "*")):
-        return "bullet"
-    
-    # Dates
-    date_patterns = [
-        r'\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}',
-        r'\b\d{4}\s*[-–]\s*\d{4}',
-        r'\b\d{2}/\d{4}',
-    ]
-    if any(re.search(pattern, text, re.IGNORECASE) for pattern in date_patterns):
-        return "date_line"
-    
-    # Contact info
-    if re.search(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', text):
-        return "contact"
-    
-    if re.search(r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b', text):
-        return "contact"
-    
-    return "text"
+@dataclass
+class TextElement:
+    id: str
+    text: str
+    x: float
+    y: float
+    font_name: str
+    font_size: float
+    is_bold: bool
+    is_italic: bool
+    color: str
+    link: str | None = None
 
 
-def extract_blocks_from_text(text: str) -> List[Dict]:
-    """Convert text to basic blocks for fallback"""
-    blocks = []
-    
-    for line in text.split("\n"):
-        line = line.strip()
-        if line:
-            blocks.append({
-                "text": line,
-                "type": guess_block_type(line)
+def extract_resume_with_layout(file_obj) -> Dict:
+    """
+    Lossless PDF parser.
+    Extracts absolute-positioned text + link annotations.
+    """
+    import tempfile
+    import os
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+        tmp.write(file_obj.read())
+        tmp_path = tmp.name
+
+    try:
+        doc = fitz.open(tmp_path)
+        pages = []
+
+        for page_index, page in enumerate(doc):
+            elements: List[TextElement] = []
+
+            text_blocks = page.get_text("dict")["blocks"]
+            links = page.get_links()
+
+            for block in text_blocks:
+                if block["type"] != 0:
+                    continue
+
+                for line in block["lines"]:
+                    for span in line["spans"]:
+                        span_rect = fitz.Rect(span["bbox"])
+                        link_url = None
+
+                        for link in links:
+                            if "uri" in link and fitz.Rect(link["from"]).intersects(span_rect):
+                                link_url = link["uri"]
+                                break
+
+                        elements.append(
+                            TextElement(
+                                id=str(uuid.uuid4()),
+                                text=span["text"],
+                                x=span["bbox"][0],
+                                y=span["bbox"][1],
+                                font_name=span["font"],
+                                font_size=span["size"],
+                                is_bold="Bold" in span["font"],
+                                is_italic=("Italic" in span["font"] or "Oblique" in span["font"]),
+                                color="#000000",
+                                link=link_url
+                            )
+                        )
+
+            pages.append({
+                "page_number": page_index,
+                "width": page.rect.width,
+                "height": page.rect.height,
+                "elements": [asdict(e) for e in elements]
             })
-    
-    return blocks
+
+        doc.close()
+        return {"pages": pages}
+
+    finally:
+        os.unlink(tmp_path)
