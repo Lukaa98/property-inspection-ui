@@ -10,15 +10,36 @@ export const parseResumeFile = async (file) => {
   });
 
   if (!res.ok) throw new Error('Parse failed');
-
-  return await res.json(); // { layout, blocks }
+  return res.json();
 };
 
-export const exportResumeToPDF = async (data) => {
+export const parseResumeText = async (layout) => {
+  const res = await fetch(API_ENDPOINTS.PARSE_RESUME_TEXT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(layout),
+  });
+
+  if (!res.ok) throw new Error('Text parse failed');
+  return res.json(); // { text, line_map }
+};
+
+export const analyzeResume = async (payload) => {
+  const res = await fetch(API_ENDPOINTS.ANALYZE_RESUME, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) throw new Error('Analyze failed');
+  return res.json(); // { semantic, line_map }
+};
+
+export const exportResumeToPDF = async (layout) => {
   const res = await fetch(API_ENDPOINTS.EXPORT_RESUME, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    body: JSON.stringify(layout),
   });
 
   if (!res.ok) throw new Error('Export failed');

@@ -1,174 +1,89 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Box, Button, Stack } from '@mui/material';
-
-import { parseResumeFile, exportResumeToPDF } from '../../services/resumeService';
-import {
-  getTemplates,
-  saveTemplate as saveTemplateService,
-  deleteTemplate as deleteTemplateService,
-} from '../../services/templateService';
-
 import LosslessResumeViewer from './LosslessResumeViewer';
-import { ResumeViewer } from './ResumeViewer';
-import { TemplatePanel } from './TemplatePanel';
-import { useResumeState } from './useResumeState';
+import {
+  parseResumeFile,
+  parseResumeText,
+  analyzeResume,
+  exportResumeToPDF,
+} from '../../services/resumeService';
 
 export default function ResumeEditor() {
-  // 🔒 Raw PDF layout
   const [layout, setLayout] = useState(null);
-
-  // ✏️ Semantic blocks (LLM / future)
-  const [items, setItems] = useState([]);
-
-  const [templates, setTemplates] = useState([]);
-  const [showTemplateForm, setShowTemplateForm] = useState(false);
-
-  const [replaceDialog, setReplaceDialog] = useState({
-    open: false,
-    experienceId: null,
-  });
-
-  const {
-    updateItem,
-    deleteItem,
-    insertTemplate,
-    replaceExperience,
-    openReplaceDialog,
-  } = useResumeState(items, setItems, replaceDialog, setReplaceDialog);
-
-  /* ---------------- INIT ---------------- */
-
-  useEffect(() => {
-    const loadedTemplates = getTemplates() || [];
-    console.log('[ResumeEditor] Loaded templates:', loadedTemplates);
-    setTemplates(loadedTemplates);
-  }, []);
-
-  /* ---------------- UPLOAD ---------------- */
+  const [semantic, setSemantic] = useState(null);
+  const [lineMap, setLineMap] = useState([]);
+  const [highlightedIds, setHighlightedIds] = useState([]);
 
   const handleUpload = async (file) => {
-    console.log('[ResumeEditor] Uploading:', file?.name);
+    console.log('Uploading resume…');
 
-    try {
-      const result = await parseResumeFile(file);
-      console.log('[ResumeEditor] parseResumeFile result:', result);
+    const layoutResult = await parseResumeFile(file);
+    console.log('Layout parsed');
+    setLayout(layoutResult);
 
-      // Backend currently returns ONLY lossless layout
-      const nextLayout =
-        result?.layout ??
-        (result?.pages ? result : null);
+    const textResult = await parseResumeText(layoutResult);
+    console.log('Text extracted');
 
-      const nextBlocks = Array.isArray(result?.blocks)
-        ? result.blocks
-        : [];
+    const analysis = await analyzeResume(textResult);
+    console.log('Semantic analysis complete');
 
-      console.log('[ResumeEditor] layout set:', !!nextLayout);
-      console.log('[ResumeEditor] semantic blocks count:', nextBlocks.length);
-
-      setLayout(nextLayout);
-      setItems(nextBlocks);
-    } catch (err) {
-      console.error('[ResumeEditor] Upload failed:', err);
-      alert('Failed to parse resume');
-    }
+    setSemantic(analysis.semantic);
+    setLineMap(analysis.line_map);
   };
 
-  /* ---------------- EXPORT ---------------- */
+  const highlightSection = (index) => {
+    if (!semantic) return;
 
-  const handleExportPDF = async () => {
-    console.log('[ResumeEditor] Export PDF clicked');
+    const section = semantic.sections[index];
+    const ids = lineMap
+      .slice(section.start_line, section.end_line + 1)
+      .flat();
 
-    try {
-      await exportResumeToPDF({ blocks: items });
-    } catch (err) {
-      console.error('[ResumeEditor] Export failed:', err);
-      alert('Failed to export PDF');
-    }
+    setHighlightedIds(ids);
   };
-
-  /* ---------------- TEMPLATE OPS ---------------- */
-
-  const saveTemplate = (template) => {
-    const saved = saveTemplateService(template);
-    console.log('[ResumeEditor] Template saved:', saved);
-    setTemplates((prev) => [...prev, saved]);
-    setShowTemplateForm(false);
-  };
-
-  const deleteTemplate = (id) => {
-    deleteTemplateService(id);
-    setTemplates((prev) => prev.filter((t) => t.id !== id));
-  };
-
-  /* ---------------- RENDER ---------------- */
-
-  const hasSemanticBlocks =
-    Array.isArray(items) && items.length > 0;
-
-  console.log('[ResumeEditor] Render state:', {
-    hasLayout: !!layout,
-    hasSemanticBlocks,
-  });
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', gap: 3, p: 3 }}>
-      {/* LEFT SIDE */}
-      <Box sx={{ flex: 1, overflowY: 'auto' }}>
-        <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-          <Button variant="contained" component="label">
-            Upload Resume
-            <input
-              hidden
-              type="file"
-              accept="application/pdf"
-              onChange={(e) =>
-                e.target.files && handleUpload(e.target.files[0])
-              }
-            />
-          </Button>
+    <Box sx={{ p: 3 }}>
+      <Stack direction="row" spacing={2} mb={2}>
+        <Button variant="contained" component="label">
+          Upload Resume
+          <input
+            hidden
+            type="file"
+            accept="application/pdf"
+            onChange={(e) => handleUpload(e.target.files[0])}
+          />
+        </Button>
 
+        <Button
+          variant="contained"
+          color="success"
+          disabled={!layout}
+          onClick={() => exportResumeToPDF(layout)}
+        >
+          Export PDF
+        </Button>
+      </Stack>
+
+      <Stack direction="row" spacing={1} mb={2}>
+        {semantic?.sections.map((s, i) => (
           <Button
-            variant="contained"
-            color="success"
-            onClick={handleExportPDF}
-            disabled={!hasSemanticBlocks}
+            key={`${s.type}-${i}`}
+            size="small"
+            onMouseEnter={() => highlightSection(i)}
+            onMouseLeave={() => setHighlightedIds([])}
           >
-            Export PDF
+            {s.type}
           </Button>
-        </Stack>
+        ))}
+      </Stack>
 
-        {/* VIEWER SWITCH */}
-        {hasSemanticBlocks ? (
-          <>
-            {console.log('[ResumeEditor] Rendering ResumeViewer')}
-            <ResumeViewer
-              items={items}
-              updateItem={updateItem}
-              deleteItem={deleteItem}
-              openReplaceDialog={openReplaceDialog}
-            />
-          </>
-        ) : (
-          <>
-            {console.log('[ResumeEditor] Rendering LosslessResumeViewer')}
-            {layout && <LosslessResumeViewer layout={layout} />}
-          </>
-        )}
-      </Box>
-
-      {/* RIGHT SIDE */}
-      <TemplatePanel
-        templates={templates}
-        showTemplateForm={showTemplateForm}
-        setShowTemplateForm={setShowTemplateForm}
-        saveTemplate={saveTemplate}
-        deleteTemplate={deleteTemplate}
-        insertTemplate={insertTemplate}
-        replaceDialog={replaceDialog}
-        setReplaceDialog={setReplaceDialog}
-        replaceExperience={replaceExperience}
-        disabled={!hasSemanticBlocks}
-      />
+      {layout && (
+        <LosslessResumeViewer
+          layout={layout}
+          highlightedIds={highlightedIds}
+        />
+      )}
     </Box>
   );
 }
