@@ -1,4 +1,4 @@
-import { Paper } from '@mui/material';
+import { Paper, Box } from '@mui/material';
 import {
   ContactInfoSection,
   SectionHeader,
@@ -8,7 +8,14 @@ import {
   CertificatesSection,
 } from '../ResumeSections';
 
-export function ResumeViewer({ items, updateItem, deleteItem, openReplaceDialog }) {
+export function ResumeViewer({
+  items = [],
+  updateItem,
+  deleteItem,
+  openReplaceDialog,
+}) {
+  if (!Array.isArray(items)) return null;
+
   return (
     <Paper
       elevation={3}
@@ -29,8 +36,9 @@ export function ResumeViewer({ items, updateItem, deleteItem, openReplaceDialog 
               <ContactInfoSection
                 key={item.id}
                 info={item}
-                onChange={(field, value, idx) => updateItem(item.id, field, value, idx)}
-                onDelete={() => deleteItem(item.id)}
+                onChange={(field, value, idx) =>
+                  updateItem(item.id, field, value, idx)
+                }
               />
             );
 
@@ -42,7 +50,9 @@ export function ResumeViewer({ items, updateItem, deleteItem, openReplaceDialog 
               <ExperienceSection
                 key={item.id}
                 experience={item}
-                onChange={(field, value, idx) => updateItem(item.id, field, value, idx)}
+                onChange={(field, value, idx) =>
+                  updateItem(item.id, field, value, idx)
+                }
                 onDelete={() => deleteItem(item.id)}
                 onReplace={() => openReplaceDialog(item.id)}
               />
@@ -53,7 +63,9 @@ export function ResumeViewer({ items, updateItem, deleteItem, openReplaceDialog 
               <SkillsSection
                 key={item.id}
                 skills={item}
-                onChange={(field, value, idx) => updateItem(item.id, field, value, idx)}
+                onChange={(field, value, idx) =>
+                  updateItem(item.id, field, value, idx)
+                }
               />
             );
 
@@ -62,7 +74,9 @@ export function ResumeViewer({ items, updateItem, deleteItem, openReplaceDialog 
               <EducationSection
                 key={item.id}
                 education={item}
-                onChange={(field, value) => updateItem(item.id, field, value)}
+                onChange={(field, value) =>
+                  updateItem(item.id, field, value)
+                }
                 onDelete={() => deleteItem(item.id)}
               />
             );
@@ -72,7 +86,9 @@ export function ResumeViewer({ items, updateItem, deleteItem, openReplaceDialog 
               <CertificatesSection
                 key={item.id}
                 certificates={item}
-                onChange={(field, value, idx) => updateItem(item.id, field, value, idx)}
+                onChange={(field, value, idx) =>
+                  updateItem(item.id, field, value, idx)
+                }
               />
             );
 

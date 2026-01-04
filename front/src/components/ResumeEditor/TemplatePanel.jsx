@@ -31,12 +31,26 @@ export function TemplatePanel({
         </Button>
 
         {showTemplateForm && (
-          <TemplateEditor onSave={saveTemplate} onCancel={() => setShowTemplateForm(false)} />
+          <TemplateEditor
+            onSave={saveTemplate}
+            onCancel={() => setShowTemplateForm(false)}
+          />
         )}
 
         <Box sx={{ mt: 2 }}>
+          {templates.length === 0 && (
+            <Typography variant="body2" color="text.secondary">
+              No templates saved yet.
+            </Typography>
+          )}
+
           {templates.map((t) => (
-            <TemplateItem key={t.id} template={t} onInsert={insertTemplate} onDelete={() => deleteTemplate(t.id)} />
+            <TemplateItem
+              key={t.id}
+              template={t}
+              onInsert={insertTemplate}
+              onDelete={() => deleteTemplate(t.id)}
+            />
           ))}
         </Box>
       </Box>
